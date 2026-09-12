@@ -1,0 +1,32 @@
+// The Android toolchain shares nothing with the homeostat core's Rust
+// devcontainer, which is why this repo is separate (homeostat
+// docs/design.md, Repo split).
+{
+	"name": "homeostat-app",
+	"image": "mcr.microsoft.com/devcontainers/java:21-bookworm",
+	"features": {
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/devcontainers-extra/features/claude-code:2": {}
+	},
+	"containerEnv": {
+		"ANDROID_HOME": "/usr/local/android-sdk"
+	},
+	"remoteEnv": {
+		"PATH": "${containerEnv:PATH}:/usr/local/android-sdk/platform-tools:/usr/local/android-sdk/cmdline-tools/latest/bin"
+	},
+	// The SDK is a download, not a feature: there is no maintained
+	// devcontainer feature for it in the namespaces this project already
+	// trusts. Idempotent, so a rebuild is cheap.
+	"postCreateCommand": ".devcontainer/install-android-sdk.sh",
+	// Builds are headless. The emulator wants KVM, which is a fight under
+	// WSL2 — and Doze, geofence transitions and DND bypass need a real
+	// phone anyway: `adb connect` to one on the LAN.
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"fwcd.kotlin",
+				"vscjava.vscode-gradle"
+			]
+		}
+	}
+}
