@@ -1,12 +1,15 @@
 package dev.homeostat.companion
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.text.InputType
 import android.view.View
@@ -27,7 +30,11 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var dndAccess: Button
+    private lateinit var batteryExemption: Button
 
+    // The exemption is what keeps the session's reconnect timers honest
+    // under Doze; this app is exactly the case the permission exists for.
+    @SuppressLint("BatteryLife")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -41,12 +48,21 @@ class MainActivity : Activity() {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
             minLines = 4
         }
+        batteryExemption = Button(this).apply {
+            text = getString(R.string.allow_battery_exemption)
+            setOnClickListener {
+                startActivity(
+                    Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")),
+                )
+            }
+        }
         setContentView(
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(48, 48, 48, 48)
                 addView(status)
                 addView(dndAccess)
+                addView(batteryExemption)
                 addView(Button(this@MainActivity).apply {
                     text = getString(R.string.scan)
                     setOnClickListener { scan() }
@@ -75,6 +91,8 @@ class MainActivity : Activity() {
         Channels.ensure(this)
         dndAccess.visibility =
             if (getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted) View.GONE else View.VISIBLE
+        batteryExemption.visibility =
+            if (getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)) View.GONE else View.VISIBLE
     }
 
     override fun onPause() {

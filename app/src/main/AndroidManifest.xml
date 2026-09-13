@@ -6,6 +6,10 @@
     <!-- Granted by the person once, in settings; what lets alerts bypass DND. -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Reconnect under Doze needs the socket's timers to fire; asked for
+         once, from the status screen. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <!-- usesCleartextTraffic: the dashboard is plain http over the tunnel
@@ -43,6 +47,13 @@
         <receiver
             android:name=".AckReceiver"
             android:exported="false" />
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Fetch the scanner module at install rather than at first scan. -->
         <meta-data
