@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
     <application
-        android:label="Homeostat"
+        android:label="@string/app_name"
         android:supportsRtl="true">
         <activity
             android:name=".MainActivity"
@@ -12,6 +17,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- specialUse: the service holds a socket for push and location
+             upload, which is neither dataSync (time-limited on 35) nor any
+             other listed type. The app is sideloaded, so no Play review. -->
+        <service
+            android:name=".CompanionService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Holds the MQTT session that delivers house notifications and presence" />
+        </service>
+
+        <!-- Fetch the scanner module at install rather than at first scan. -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode_ui" />
     </application>
 
 </manifest>

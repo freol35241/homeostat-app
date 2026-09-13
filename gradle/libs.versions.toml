@@ -1,6 +1,16 @@
 [versions]
 agp = "8.7.3"
 kotlin = "2.0.21"
+paho = "1.2.5"
+tomlj = "1.1.1"
+codeScanner = "16.1.0"
+junit = "4.13.2"
+
+[libraries]
+paho-mqttv3 = { module = "org.eclipse.paho:org.eclipse.paho.client.mqttv3", version.ref = "paho" }
+tomlj = { module = "org.tomlj:tomlj", version.ref = "tomlj" }
+play-services-code-scanner = { module = "com.google.android.gms:play-services-code-scanner", version.ref = "codeScanner" }
+junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

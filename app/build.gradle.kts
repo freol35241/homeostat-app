@@ -35,3 +35,16 @@ android {
         jvmTarget = "17"
     }
 }
+
+dependencies {
+    // MQTT 3.1.1 with persistent sessions and a last will, pure JVM. The
+    // reconnect logic is ours (MqttSession), not Paho's, so it is testable.
+    implementation(libs.paho.mqttv3)
+    // The provisioning blob is TOML (companion-protocol.md).
+    implementation(libs.tomlj)
+    // Google's code scanner: Play services supplies the scanner UI, so the
+    // app needs no camera permission and no camera code of its own.
+    implementation(libs.play.services.code.scanner)
+
+    testImplementation(libs.junit)
+}

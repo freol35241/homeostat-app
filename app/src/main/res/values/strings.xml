@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="placeholder">Not provisioned yet.</string>
+    <string name="app_name">Homeostat</string>
+    <string name="channel_service">Connection status</string>
+    <string name="scan">Scan config QR code</string>
+    <string name="paste_hint">…or paste the config here</string>
+    <string name="use_pasted">Use pasted config</string>
+    <string name="provisioned">Provisioned as %1$s, broker %2$s</string>
+    <string name="scan_failed">Scan failed: %1$s</string>
+    <string name="status_unprovisioned">Not provisioned. Scan the QR code from the house repo.</string>
+    <string name="status_starting">Starting</string>
+    <string name="status_connecting">Connecting to the broker…</string>
+    <string name="status_connected">Connected</string>
+    <string name="status_waiting">Disconnected, retrying in %1$d s (%2$s)</string>
+    <string name="status_stopped">Stopped</string>
 </resources>

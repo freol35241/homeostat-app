@@ -2,8 +2,10 @@
 
 The Android companion app for [homeostat](https://github.com/freol35241/homeostat).
 
-**Status: a scaffold.** It builds, installs and launches, and does nothing
-else. No MQTT, no geofence, no notifications yet.
+**Status: early.** It provisions from the QR code the house repo renders
+and holds the persistent MQTT session — birth message, last will,
+reconnect with backoff. No geofence and no notification channels yet;
+incoming `message`/`alert` are subscribed to but only logged.
 
 ## What it is
 
@@ -54,9 +56,10 @@ which is a fight under WSL2, and the parts that matter (reconnect under
 Doze, real geofence transitions, DND bypass) need a real phone anyway.
 `adb connect` to one on the LAN.
 
-There are no unit tests yet, deliberately: there is nothing to test that
-would not be a test of the scaffold. The first ones come with the config
-blob parser and the MQTT session's reconnect logic, both pure JVM.
+The unit tests cover the config blob parser and the session's reconnect
+logic, both pure JVM. What Paho does with the session — `clean_session`,
+the will, the keepalive — and how it all behaves under Doze is not
+covered by them.
 
 Targets API 31+ (the family's Galaxy S22 and S25).
 
