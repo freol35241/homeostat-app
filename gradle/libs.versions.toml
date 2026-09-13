@@ -6,6 +6,8 @@ tomlj = "1.1.1"
 codeScanner = "16.1.0"
 location = "21.3.0"
 junit = "4.13.2"
+material = "1.14.0"
+appcompat = "1.8.0"
 
 [libraries]
 paho-mqttv3 = { module = "org.eclipse.paho:org.eclipse.paho.client.mqttv3", version.ref = "paho" }
@@ -13,6 +15,8 @@ tomlj = { module = "org.tomlj:tomlj", version.ref = "tomlj" }
 play-services-code-scanner = { module = "com.google.android.gms:play-services-code-scanner", version.ref = "codeScanner" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "location" }
 junit = { module = "junit:junit", version.ref = "junit" }
+material = { module = "com.google.android.material:material", version.ref = "material" }
+appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

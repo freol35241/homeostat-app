@@ -20,7 +20,9 @@
          by design (no TLS, no login; reachability is the credential). -->
     <application
         android:name=".CompanionApp"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:theme="@style/Theme.Homeostat"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true">
         <activity

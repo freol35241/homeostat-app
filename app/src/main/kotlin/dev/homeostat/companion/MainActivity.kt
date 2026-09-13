@@ -2,7 +2,6 @@ package dev.homeostat.companion
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -18,6 +17,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
@@ -27,7 +27,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
  * ways to hand the phone its config blob — scan the QR code the house repo
  * renders, or paste the same text.
  */
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
     private lateinit var status: TextView
     private lateinit var dndAccess: Button
     private lateinit var batteryExemption: Button

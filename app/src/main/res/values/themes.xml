@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 with the brand's two colours: the house as primary, the
+         set point as the accent that also marks an alert. -->
+    <style name="Theme.Homeostat" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand_house</item>
+        <item name="colorOnPrimary">@color/brand_trace</item>
+        <item name="colorSecondary">@color/brand_set_point</item>
+        <item name="colorTertiary">@color/brand_set_point</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

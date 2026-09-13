@@ -1,12 +1,12 @@
 package dev.homeostat.companion
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.appcompat.app.AppCompatActivity
 
 /**
  * The launcher: the dashboard unit's page in a standalone window, which is
@@ -16,7 +16,7 @@ import android.webkit.WebViewClient
  * Without a dashboard URL there is nothing to show, and the status screen
  * takes over.
  */
-class DashboardActivity : Activity() {
+class DashboardActivity : AppCompatActivity() {
     private lateinit var web: WebView
 
     @SuppressLint("SetJavaScriptEnabled") // The page is the house's own dashboard unit.

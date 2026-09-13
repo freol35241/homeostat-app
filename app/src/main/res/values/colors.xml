@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The stack's palette (homeostat docs/brand): two colours and an ink. -->
+<resources>
+    <color name="brand_house">#1F5E4A</color>
+    <color name="brand_house_dark">#2A7A61</color>
+    <color name="brand_trace">#F2EFE6</color>
+    <color name="brand_set_point">#E8A33D</color>
+</resources>

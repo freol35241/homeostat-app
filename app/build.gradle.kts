@@ -47,6 +47,9 @@ dependencies {
     implementation(libs.play.services.code.scanner)
     // The platform's geofencing: one fence, run by the OS at near-zero cost.
     implementation(libs.play.services.location)
+    // Material 3 for the theme; AppCompat is what it inflates through.
+    implementation(libs.material)
+    implementation(libs.appcompat)
 
     testImplementation(libs.junit)
 }
