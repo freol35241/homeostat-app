@@ -77,6 +77,37 @@ class MqttSessionTest {
     }
 
     @Test
+    fun `publish goes straight out while connected, never retained`() {
+        session.start()
+        transport.callbacks.onConnected()
+        session.publish("notifier/ack", "1752600000")
+        assertEquals("publish companion/alice/notifier/ack 1752600000", transport.calls.last())
+    }
+
+    @Test
+    fun `publish while disconnected waits for the next connect, after the birth message, in order`() {
+        session.publish("notifier/ack", "1")
+        session.start()
+        transport.callbacks.onConnectFailed(RuntimeException())
+        session.publish("person/presence", "false")
+        scheduler.runNext()
+        transport.callbacks.onConnected()
+        assertEquals(
+            listOf(
+                "publish companion/alice/available true retained",
+                "publish companion/alice/notifier/ack 1",
+                "publish companion/alice/person/presence false",
+            ),
+            transport.calls.filter { it.startsWith("publish") },
+        )
+
+        transport.callbacks.onConnectionLost(RuntimeException())
+        transport.calls.clear()
+        session.publish("notifier/ack", "2")
+        assertEquals(emptyList<String>(), transport.calls)
+    }
+
+    @Test
     fun `only the two downward topics reach the listener, by leaf`() {
         session.start()
         transport.callbacks.onConnected()

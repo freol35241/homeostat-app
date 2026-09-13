@@ -31,8 +31,12 @@ class MqttSession(
 
     private val downward = listOf(config.topic("notifier/message"), config.topic("notifier/alert"))
     private var running = false
+    private var connected = false
     private var attempt = 0
     private var pendingRetry: Cancellable? = null
+    // What the phone said while it had no broker: acks and presence
+    // transitions wait here for the next connect, in order.
+    private val outbox = ArrayDeque<Pair<String, String>>()
 
     @Synchronized
     fun start() {
@@ -44,9 +48,16 @@ class MqttSession(
     @Synchronized
     fun stop() {
         running = false
+        connected = false
         pendingRetry?.cancel()
         pendingRetry = null
         transport.disconnect()
+    }
+
+    /** Publish `{base}/{phone}/{leaf}` at QoS 1, now or on the next connect. Never retained. */
+    @Synchronized
+    fun publish(leaf: String, payload: String) {
+        if (connected) transport.publish(config.topic(leaf), payload, retained = false) else outbox += leaf to payload
     }
 
     private fun connect() {
@@ -58,10 +69,15 @@ class MqttSession(
     override fun onConnected() {
         if (!running) return
         attempt = 0
+        connected = true
         // Resubscribe on every reconnect, as the protocol asks; with a
         // persistent session the broker already remembers, and it is cheap.
         transport.subscribe(downward)
         transport.publish(config.topic("available"), "true", retained = true)
+        while (outbox.isNotEmpty()) {
+            val (leaf, payload) = outbox.removeFirst()
+            transport.publish(config.topic(leaf), payload, retained = false)
+        }
         listener.onStateChanged(State.Connected)
     }
 
@@ -78,6 +94,7 @@ class MqttSession(
     }
 
     private fun retryLater(cause: Throwable) {
+        connected = false
         if (!running) return
         val delay = backoffMs(attempt++)
         listener.onStateChanged(State.Waiting(delay, cause.message))

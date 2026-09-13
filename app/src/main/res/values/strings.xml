@@ -2,6 +2,9 @@
 <resources>
     <string name="app_name">Homeostat</string>
     <string name="channel_service">Connection status</string>
+    <string name="channel_message">Messages</string>
+    <string name="channel_alert">Alerts</string>
+    <string name="allow_dnd_bypass">Let alerts through Do Not Disturb</string>
     <string name="scan">Scan config QR code</string>
     <string name="paste_hint">…or paste the config here</string>
     <string name="use_pasted">Use pasted config</string>

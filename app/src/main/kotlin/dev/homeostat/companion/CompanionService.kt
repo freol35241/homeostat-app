@@ -1,7 +1,6 @@
 package dev.homeostat.companion
 
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
@@ -13,6 +12,9 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
+import java.util.concurrent.atomic.AtomicInteger
+import org.json.JSONException
+import org.json.JSONObject
 
 /**
  * The app's real surface: a foreground service holding the one MQTT
@@ -23,12 +25,11 @@ import android.util.Log
 class CompanionService : Service(), MqttSession.Listener {
     private var session: MqttSession? = null
     private val notifications by lazy { getSystemService(NotificationManager::class.java) }
+    private val nextId = AtomicInteger(FIRST_MESSAGE_ID)
 
     override fun onCreate() {
         super.onCreate()
-        notifications.createNotificationChannel(
-            NotificationChannel(CHANNEL, getString(R.string.channel_service), NotificationManager.IMPORTANCE_LOW),
-        )
+        Channels.ensure(this)
         val notification = statusNotification(getString(R.string.status_starting))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
@@ -38,6 +39,11 @@ class CompanionService : Service(), MqttSession.Listener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_ACK) {
+            // Epoch seconds, a bare number: the person saw it, now.
+            session?.publish("notifier/ack", (System.currentTimeMillis() / 1000).toString())
+            return START_STICKY
+        }
         if (session == null) {
             val config = ConfigStore(this).load()
             if (config == null) {
@@ -70,16 +76,51 @@ class CompanionService : Service(), MqttSession.Listener {
     }
 
     override fun onNotification(leaf: String, payload: String) {
-        // The message and alert channels are the next step; until then the
-        // subscription exists so the persistent session queues nothing lost.
-        Log.i(TAG, "$leaf: $payload")
+        val json = try {
+            JSONObject(payload)
+        } catch (e: JSONException) {
+            Log.w(TAG, "$leaf: not an object: $payload")
+            return
+        }
+        val text = json.optString("text")
+        if (text.isEmpty()) {
+            Log.w(TAG, "$leaf: no text: $payload")
+            return
+        }
+        val id = nextId.getAndIncrement()
+        // Open and dismiss both acknowledge: the tap reaches DashboardActivity
+        // with the flag, the swipe reaches AckReceiver.
+        val open = PendingIntent.getActivity(
+            this, id,
+            Intent(this, DashboardActivity::class.java).putExtra(EXTRA_ACK, true),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+        val dismissed = PendingIntent.getBroadcast(this, id, Intent(this, AckReceiver::class.java), PendingIntent.FLAG_IMMUTABLE)
+        val notification = Notification.Builder(this, leaf)
+            .setSmallIcon(android.R.drawable.stat_notify_chat)
+            .setContentTitle(json.optString("actor", getString(R.string.app_name)))
+            .setContentText(text)
+            .setStyle(Notification.BigTextStyle().bigText(text))
+            .setContentIntent(open)
+            .setDeleteIntent(dismissed)
+            .setAutoCancel(true)
+            .apply {
+                val sentAt = json.optDouble("sent_at")
+                if (!sentAt.isNaN()) setWhen((sentAt * 1000).toLong()).setShowWhen(true)
+                if (leaf == Channels.ALERT) setCategory(Notification.CATEGORY_ALARM)
+            }
+            .build()
+        // An alert keeps sounding until someone deals with it, as ntfy's
+        // urgent priority did.
+        if (leaf == Channels.ALERT) notification.flags = notification.flags or Notification.FLAG_INSISTENT
+        notifications.notify(id, notification)
     }
 
     private fun statusNotification(text: String): Notification {
         val open = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE,
         )
-        return Notification.Builder(this, CHANNEL)
+        return Notification.Builder(this, Channels.SERVICE)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
@@ -99,11 +140,17 @@ class CompanionService : Service(), MqttSession.Listener {
 
     companion object {
         private const val TAG = "CompanionService"
-        private const val CHANNEL = "service"
         private const val NOTIFICATION_ID = 1
+        private const val FIRST_MESSAGE_ID = 100
+        private const val ACTION_ACK = "dev.homeostat.companion.ACK"
+        const val EXTRA_ACK = "ack"
 
         fun start(context: Context) {
             context.startForegroundService(Intent(context, CompanionService::class.java))
+        }
+
+        fun ack(context: Context) {
+            context.startForegroundService(Intent(context, CompanionService::class.java).setAction(ACTION_ACK))
         }
 
         /** A re-provision: the old session goes down with its own last will, the new one comes up. */

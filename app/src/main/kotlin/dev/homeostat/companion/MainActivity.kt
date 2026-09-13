@@ -2,11 +2,14 @@ package dev.homeostat.companion
 
 import android.Manifest
 import android.app.Activity
+import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.InputType
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -23,11 +26,16 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
  */
 class MainActivity : Activity() {
     private lateinit var status: TextView
+    private lateinit var dndAccess: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         status = TextView(this).apply { textSize = 18f }
+        dndAccess = Button(this).apply {
+            text = getString(R.string.allow_dnd_bypass)
+            setOnClickListener { startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)) }
+        }
         val pasted = EditText(this).apply {
             hint = getString(R.string.paste_hint)
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
@@ -38,6 +46,7 @@ class MainActivity : Activity() {
                 orientation = LinearLayout.VERTICAL
                 setPadding(48, 48, 48, 48)
                 addView(status)
+                addView(dndAccess)
                 addView(Button(this@MainActivity).apply {
                     text = getString(R.string.scan)
                     setOnClickListener { scan() }
@@ -61,6 +70,11 @@ class MainActivity : Activity() {
         super.onResume()
         Status.observer = { status.text = it }
         status.text = Status.text.ifEmpty { getString(R.string.status_unprovisioned) }
+        // Bypass-DND on the alert channel only takes once policy access is
+        // granted, so re-create the channels on the way back from settings.
+        Channels.ensure(this)
+        dndAccess.visibility =
+            if (getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted) View.GONE else View.VISIBLE
     }
 
     override fun onPause() {

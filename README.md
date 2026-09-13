@@ -4,8 +4,9 @@ The Android companion app for [homeostat](https://github.com/freol35241/homeosta
 
 **Status: early.** It provisions from the QR code the house repo renders,
 holds the persistent MQTT session — birth message, last will, reconnect
-with backoff — and opens the dashboard in a WebView. No geofence and no notification channels yet;
-incoming `message`/`alert` are subscribed to but only logged.
+with backoff — opens the dashboard in a WebView, and delivers `message`
+and `alert` as two notification channels, acknowledging on dismiss. No
+geofence yet.
 
 ## What it is
 

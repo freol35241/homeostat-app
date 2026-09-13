@@ -3,6 +3,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Granted by the person once, in settings; what lets alerts bypass DND. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
@@ -37,6 +39,10 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Holds the MQTT session that delivers house notifications and presence" />
         </service>
+
+        <receiver
+            android:name=".AckReceiver"
+            android:exported="false" />
 
         <!-- Fetch the scanner module at install rather than at first scan. -->
         <meta-data
