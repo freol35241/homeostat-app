@@ -18,6 +18,9 @@ import org.tomlj.TomlInvalidTypeException
  * ```
  *
  * The broker URL's path is the base topic; absent, it is `companion`.
+ *
+ * `dashboard` (optional) is the dashboard unit's URL for the WebView —
+ * proposed in homeostat#84 and not yet in the protocol document.
  */
 data class CompanionConfig(
     val host: String,
@@ -26,6 +29,7 @@ data class CompanionConfig(
     val phone: String,
     val username: String,
     val password: String,
+    val dashboard: String? = null,
 ) {
     /** Stable for the life of the install, per the protocol. */
     val clientId: String get() = "companion-$phone"
@@ -69,6 +73,11 @@ data class CompanionConfig(
                 throw ConfigException("'phone' must be a single topic segment")
             }
 
+            val dashboard = toml.getString("dashboard")?.takeIf { it.isNotEmpty() }?.also {
+                val scheme = runCatching { URI(it).scheme }.getOrNull()
+                if (scheme != "http" && scheme != "https") throw ConfigException("'dashboard' must be an http:// URL")
+            }
+
             return CompanionConfig(
                 host = host,
                 port = if (broker.port == -1) DEFAULT_PORT else broker.port,
@@ -76,6 +85,7 @@ data class CompanionConfig(
                 phone = phone,
                 username = string("username"),
                 password = string("password"),
+                dashboard = dashboard,
             )
         }
     }

@@ -2,6 +2,7 @@ package dev.homeostat.companion
 
 import android.Manifest
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -54,7 +55,6 @@ class MainActivity : Activity() {
         ) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
         }
-        if (ConfigStore(this).load() != null) CompanionService.start(this)
     }
 
     override fun onResume() {
@@ -85,6 +85,10 @@ class MainActivity : Activity() {
         ConfigStore(this).save(toml)
         toast(getString(R.string.provisioned, config.phone, config.host))
         CompanionService.restart(this)
+        if (config.dashboard != null) {
+            startActivity(Intent(this, DashboardActivity::class.java))
+            finish()
+        }
     }
 
     private fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()

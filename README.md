@@ -2,9 +2,9 @@
 
 The Android companion app for [homeostat](https://github.com/freol35241/homeostat).
 
-**Status: early.** It provisions from the QR code the house repo renders
-and holds the persistent MQTT session — birth message, last will,
-reconnect with backoff. No geofence and no notification channels yet;
+**Status: early.** It provisions from the QR code the house repo renders,
+holds the persistent MQTT session — birth message, last will, reconnect
+with backoff — and opens the dashboard in a WebView. No geofence and no notification channels yet;
 incoming `message`/`alert` are subscribed to but only logged.
 
 ## What it is
@@ -34,9 +34,10 @@ through an issue on homeostat.
 ## What it is not
 
 - **Not a dashboard.** The app never renders house state; the dashboard
-  owns rendering. A WebView of the dashboard is the eventual answer to
-  the missing home-screen icon — the same page, in a standalone window,
-  without the private CA a PWA would need. Not a second UI.
+  owns rendering. The launcher opens the dashboard unit's page in a
+  WebView — the same page, in a standalone window, the home-screen icon
+  the bookmark lacks — when the config blob names it (`dashboard`,
+  proposed in homeostat#84). Not a second UI.
 - **Not an owner surface.** Family tier, like the dashboard,
   structurally.
 - **Not a WireGuard client.** The tunnel is the WireGuard app's job; this

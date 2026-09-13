@@ -1,6 +1,7 @@
 package dev.homeostat.companion
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -39,6 +40,18 @@ class CompanionConfigTest {
         val config = CompanionConfig.parse(example.replace("/companion", "/other/prefix/"))
         assertEquals("other/prefix", config.baseTopic)
         assertEquals("other/prefix/alice/available", config.topic("available"))
+    }
+
+    @Test
+    fun `dashboard is optional and must be a web URL`() {
+        assertNull(CompanionConfig.parse(example).dashboard)
+        assertEquals(
+            "http://10.0.0.1:8080",
+            CompanionConfig.parse(example + "\ndashboard = \"http://10.0.0.1:8080\"").dashboard,
+        )
+        assertThrows(ConfigException::class.java) {
+            CompanionConfig.parse(example + "\ndashboard = \"10.0.0.1:8080\"")
+        }
     }
 
     @Test
