@@ -5,8 +5,9 @@ The Android companion app for [homeostat](https://github.com/freol35241/homeosta
 **Status: early.** It provisions from the QR code the house repo renders,
 holds the persistent MQTT session — birth message, last will, reconnect
 with backoff — opens the dashboard in a WebView, and delivers `message`
-and `alert` as two notification channels, acknowledging on dismiss. No
-geofence yet.
+and `alert` as two notification channels, acknowledging on dismiss, and
+publishes `presence` from the one `home` geofence. Opt-in `position` is
+not built. Nothing has run on a phone yet.
 
 ## What it is
 
@@ -38,7 +39,7 @@ through an issue on homeostat.
   owns rendering. The launcher opens the dashboard unit's page in a
   WebView — the same page, in a standalone window, the home-screen icon
   the bookmark lacks — when the config blob names it (`dashboard`,
-  proposed in homeostat#84). Not a second UI.
+  proposed in homeostat#84 along with `home`). Not a second UI.
 - **Not an owner surface.** Family tier, like the dashboard,
   structurally.
 - **Not a WireGuard client.** The tunnel is the WireGuard app's job; this

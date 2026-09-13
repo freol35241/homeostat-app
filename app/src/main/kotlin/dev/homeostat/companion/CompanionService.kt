@@ -39,11 +39,6 @@ class CompanionService : Service(), MqttSession.Listener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_ACK) {
-            // Epoch seconds, a bare number: the person saw it, now.
-            session?.publish("notifier/ack", (System.currentTimeMillis() / 1000).toString())
-            return START_STICKY
-        }
         if (session == null) {
             val config = ConfigStore(this).load()
             if (config == null) {
@@ -51,6 +46,11 @@ class CompanionService : Service(), MqttSession.Listener {
                 return START_NOT_STICKY
             }
             session = MqttSession(config, PahoTransport(), HandlerScheduler(), this).also { it.start() }
+        }
+        when (intent?.action) {
+            // Epoch seconds, a bare number: the person saw it, now.
+            ACTION_ACK -> session?.publish("notifier/ack", (System.currentTimeMillis() / 1000).toString())
+            ACTION_PUBLISH -> session?.publish(intent.getStringExtra(EXTRA_LEAF)!!, intent.getStringExtra(EXTRA_PAYLOAD)!!)
         }
         return START_STICKY
     }
@@ -143,6 +143,9 @@ class CompanionService : Service(), MqttSession.Listener {
         private const val NOTIFICATION_ID = 1
         private const val FIRST_MESSAGE_ID = 100
         private const val ACTION_ACK = "dev.homeostat.companion.ACK"
+        private const val ACTION_PUBLISH = "dev.homeostat.companion.PUBLISH"
+        private const val EXTRA_LEAF = "leaf"
+        private const val EXTRA_PAYLOAD = "payload"
         const val EXTRA_ACK = "ack"
 
         fun start(context: Context) {
@@ -151,6 +154,16 @@ class CompanionService : Service(), MqttSession.Listener {
 
         fun ack(context: Context) {
             context.startForegroundService(Intent(context, CompanionService::class.java).setAction(ACTION_ACK))
+        }
+
+        /** Publish in this phone's subtree, from wherever the OS woke us; queued if offline. */
+        fun publish(context: Context, leaf: String, payload: String) {
+            context.startForegroundService(
+                Intent(context, CompanionService::class.java)
+                    .setAction(ACTION_PUBLISH)
+                    .putExtra(EXTRA_LEAF, leaf)
+                    .putExtra(EXTRA_PAYLOAD, payload),
+            )
         }
 
         /** A re-provision: the old session goes down with its own last will, the new one comes up. */

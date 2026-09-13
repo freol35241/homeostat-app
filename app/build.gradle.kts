@@ -45,6 +45,8 @@ dependencies {
     // Google's code scanner: Play services supplies the scanner UI, so the
     // app needs no camera permission and no camera code of its own.
     implementation(libs.play.services.code.scanner)
+    // The platform's geofencing: one fence, run by the OS at near-zero cost.
+    implementation(libs.play.services.location)
 
     testImplementation(libs.junit)
 }

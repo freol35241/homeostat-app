@@ -19,7 +19,8 @@ import org.tomlj.TomlInvalidTypeException
  *
  * The broker URL's path is the base topic; absent, it is `companion`.
  *
- * `dashboard` (optional) is the dashboard unit's URL for the WebView —
+ * `dashboard` (optional) is the dashboard unit's URL for the WebView, and
+ * `home = { lat, lon, radius_m }` (optional) the one geofence — both
  * proposed in homeostat#84 and not yet in the protocol document.
  */
 data class CompanionConfig(
@@ -30,7 +31,10 @@ data class CompanionConfig(
     val username: String,
     val password: String,
     val dashboard: String? = null,
+    val home: Home? = null,
 ) {
+    data class Home(val lat: Double, val lon: Double, val radiusM: Float)
+
     /** Stable for the life of the install, per the protocol. */
     val clientId: String get() = "companion-$phone"
 
@@ -43,6 +47,8 @@ data class CompanionConfig(
     companion object {
         const val DEFAULT_BASE_TOPIC = "companion"
         private const val DEFAULT_PORT = 1883
+        // Android's geofencing is unreliable much under 100 m; a lot plus GPS slop.
+        private const val DEFAULT_RADIUS_M = 150f
 
         /** @throws ConfigException with a message fit for showing to the person holding the phone. */
         fun parse(text: String): CompanionConfig {
@@ -78,6 +84,15 @@ data class CompanionConfig(
                 if (scheme != "http" && scheme != "https") throw ConfigException("'dashboard' must be an http:// URL")
             }
 
+            val home = toml.getTable("home")?.let { table ->
+                fun number(key: String): Double? = (table.get(key) as? Number)?.toDouble()
+                Home(
+                    lat = number("lat") ?: throw ConfigException("'home.lat' must be a number"),
+                    lon = number("lon") ?: throw ConfigException("'home.lon' must be a number"),
+                    radiusM = number("radius_m")?.toFloat() ?: DEFAULT_RADIUS_M,
+                )
+            }
+
             return CompanionConfig(
                 host = host,
                 port = if (broker.port == -1) DEFAULT_PORT else broker.port,
@@ -86,6 +101,7 @@ data class CompanionConfig(
                 username = string("username"),
                 password = string("password"),
                 dashboard = dashboard,
+                home = home,
             )
         }
     }

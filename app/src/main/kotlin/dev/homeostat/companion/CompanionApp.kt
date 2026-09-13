@@ -8,5 +8,6 @@ class CompanionApp : Application() {
         // A provisioned phone holds its session whenever the app is alive,
         // whichever screen brought it up.
         if (ConfigStore(this).load() != null) CompanionService.start(this)
+        Geofences.register(this)
     }
 }

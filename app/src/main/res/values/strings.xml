@@ -6,6 +6,7 @@
     <string name="channel_alert">Alerts</string>
     <string name="allow_dnd_bypass">Let alerts through Do Not Disturb</string>
     <string name="allow_battery_exemption">Keep connected in the background</string>
+    <string name="allow_location">Allow location, for home presence</string>
     <string name="scan">Scan config QR code</string>
     <string name="paste_hint">…or paste the config here</string>
     <string name="use_pasted">Use pasted config</string>

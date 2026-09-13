@@ -31,6 +31,7 @@ class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var dndAccess: Button
     private lateinit var batteryExemption: Button
+    private lateinit var location: Button
 
     // The exemption is what keeps the session's reconnect timers honest
     // under Doze; this app is exactly the case the permission exists for.
@@ -56,6 +57,10 @@ class MainActivity : Activity() {
                 )
             }
         }
+        location = Button(this).apply {
+            text = getString(R.string.allow_location)
+            setOnClickListener { requestLocation() }
+        }
         setContentView(
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
@@ -63,6 +68,7 @@ class MainActivity : Activity() {
                 addView(status)
                 addView(dndAccess)
                 addView(batteryExemption)
+                addView(location)
                 addView(Button(this@MainActivity).apply {
                     text = getString(R.string.scan)
                     setOnClickListener { scan() }
@@ -93,6 +99,29 @@ class MainActivity : Activity() {
             if (getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted) View.GONE else View.VISIBLE
         batteryExemption.visibility =
             if (getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)) View.GONE else View.VISIBLE
+        location.visibility =
+            if (ConfigStore(this).load()?.home == null || Geofences.permitted(this)) View.GONE else View.VISIBLE
+    }
+
+    // Android grants background location only as a second step after
+    // foreground, and on 30+ that step is a settings page.
+    private fun requestLocation() {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), REQUEST_FINE,
+            )
+        } else {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), REQUEST_BACKGROUND)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (grantResults.firstOrNull() != PackageManager.PERMISSION_GRANTED) return
+        when (requestCode) {
+            REQUEST_FINE -> requestLocation()
+            REQUEST_BACKGROUND -> Geofences.register(this)
+        }
     }
 
     override fun onPause() {
@@ -117,6 +146,7 @@ class MainActivity : Activity() {
         ConfigStore(this).save(toml)
         toast(getString(R.string.provisioned, config.phone, config.host))
         CompanionService.restart(this)
+        Geofences.register(this)
         if (config.dashboard != null) {
             startActivity(Intent(this, DashboardActivity::class.java))
             finish()
@@ -124,4 +154,9 @@ class MainActivity : Activity() {
     }
 
     private fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()
+
+    private companion object {
+        const val REQUEST_FINE = 1
+        const val REQUEST_BACKGROUND = 2
+    }
 }

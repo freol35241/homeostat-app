@@ -55,6 +55,22 @@ class CompanionConfigTest {
     }
 
     @Test
+    fun `home is optional, takes integers or floats, and defaults the radius`() {
+        assertNull(CompanionConfig.parse(example).home)
+        assertEquals(
+            CompanionConfig.Home(59.33, 18.0, 150f),
+            CompanionConfig.parse(example + "\nhome = { lat = 59.33, lon = 18 }").home,
+        )
+        assertEquals(
+            CompanionConfig.Home(59.33, 18.06, 200f),
+            CompanionConfig.parse(example + "\nhome = { lat = 59.33, lon = 18.06, radius_m = 200 }").home,
+        )
+        assertThrows(ConfigException::class.java) {
+            CompanionConfig.parse(example + "\nhome = { lat = \"59.33\", lon = 18.06 }")
+        }
+    }
+
+    @Test
     fun `a missing key names the key`() {
         val e = assertThrows(ConfigException::class.java) {
             CompanionConfig.parse(example.replace("password = \"s3cret\"", ""))
