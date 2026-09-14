@@ -67,6 +67,16 @@ covered by them.
 
 Targets API 31+ (the family's Galaxy S22 and S25).
 
+## Releasing
+
+A release is a tag: `git tag v0.1.0 && git push origin v0.1.0`. The
+workflow builds a signed APK and attaches it to a GitHub pre-release;
+the version name is the tag, the version code the run number. The
+signing key lives in the repo's secrets (`HOMEOSTAT_KEYSTORE_BASE64`,
+`HOMEOSTAT_KEYSTORE_PASSWORD`, `HOMEOSTAT_KEY_ALIAS`) and nowhere in the
+tree — Android refuses an update signed with a different key, so losing
+it means every phone uninstalls first.
+
 ## License
 
 Apache 2.0, like homeostat.

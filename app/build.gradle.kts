@@ -16,13 +16,31 @@ android {
         // compatibility code for one.
         minSdk = 31
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // Set by the release workflow from the tag and the run number, so a
+        // release is a tag and not a bump commit. Locally: 0.0.0 (1).
+        versionCode = System.getenv("HOMEOSTAT_VERSION_CODE")?.toInt() ?: 1
+        versionName = System.getenv("HOMEOSTAT_VERSION_NAME") ?: "0.0.0"
+    }
+
+    // The release key lives in GitHub secrets, decoded to a file by the
+    // workflow. Without it a release build is simply unsigned, which is
+    // what a local `assembleRelease` gets.
+    val keystore = System.getenv("HOMEOSTAT_KEYSTORE")
+    if (keystore != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(keystore)
+                storePassword = System.getenv("HOMEOSTAT_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("HOMEOSTAT_KEY_ALIAS")
+                keyPassword = System.getenv("HOMEOSTAT_KEYSTORE_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (keystore != null) signingConfig = signingConfigs.getByName("release")
         }
     }
 
