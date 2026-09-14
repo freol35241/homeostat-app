@@ -9,5 +9,6 @@ class CompanionApp : Application() {
         // whichever screen brought it up.
         if (ConfigStore(this).load() != null) CompanionService.start(this)
         Geofences.register(this)
+        Positions.reconcile(this)
     }
 }

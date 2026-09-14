@@ -67,6 +67,9 @@ class GeofenceReceiver : BroadcastReceiver() {
             Geofence.GEOFENCE_TRANSITION_EXIT -> false
             else -> return
         }
+        ConfigStore(context).lastPresence = presence
         CompanionService.publish(context, "person/presence", presence.toString())
+        // Away starts the opt-in position updates; home stops them.
+        Positions.reconcile(context)
     }
 }

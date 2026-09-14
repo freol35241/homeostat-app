@@ -57,6 +57,9 @@
             android:name=".GeofenceReceiver"
             android:exported="false" />
         <receiver
+            android:name=".PositionReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".BootReceiver"
             android:exported="true">
             <intent-filter>

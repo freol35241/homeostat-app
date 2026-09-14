@@ -17,6 +17,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.google.android.material.materialswitch.MaterialSwitch
 import androidx.appcompat.app.AppCompatActivity
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
@@ -32,6 +33,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var dndAccess: Button
     private lateinit var batteryExemption: Button
     private lateinit var location: Button
+    private lateinit var sharePosition: MaterialSwitch
 
     // The exemption is what keeps the session's reconnect timers honest
     // under Doze; this app is exactly the case the permission exists for.
@@ -61,6 +63,13 @@ class MainActivity : AppCompatActivity() {
             text = getString(R.string.allow_location)
             setOnClickListener { requestLocation() }
         }
+        sharePosition = MaterialSwitch(this).apply {
+            text = getString(R.string.share_position)
+            setOnCheckedChangeListener { _, on ->
+                ConfigStore(this@MainActivity).sharePosition = on
+                Positions.reconcile(this@MainActivity)
+            }
+        }
         setContentView(
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
@@ -69,6 +78,7 @@ class MainActivity : AppCompatActivity() {
                 addView(dndAccess)
                 addView(batteryExemption)
                 addView(location)
+                addView(sharePosition)
                 addView(Button(this@MainActivity).apply {
                     text = getString(R.string.scan)
                     setOnClickListener { scan() }
@@ -99,8 +109,12 @@ class MainActivity : AppCompatActivity() {
             if (getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted) View.GONE else View.VISIBLE
         batteryExemption.visibility =
             if (getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)) View.GONE else View.VISIBLE
-        location.visibility =
-            if (ConfigStore(this).load()?.home == null || Geofences.permitted(this)) View.GONE else View.VISIBLE
+        val store = ConfigStore(this)
+        val hasHome = store.load()?.home != null
+        location.visibility = if (!hasHome || Geofences.permitted(this)) View.GONE else View.VISIBLE
+        // Position needs the fence: it only runs while away.
+        sharePosition.visibility = if (hasHome && Geofences.permitted(this)) View.VISIBLE else View.GONE
+        sharePosition.isChecked = store.sharePosition
     }
 
     // Android grants background location only as a second step after
