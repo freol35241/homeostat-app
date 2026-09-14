@@ -5,7 +5,7 @@
     android:viewportHeight="108">
     <group android:scaleX="0.62" android:scaleY="0.62" android:pivotX="54" android:pivotY="54">
         <path android:pathData="M51.03,14.68 Q54,12 56.97,14.68 L93.03,47.32 Q96,50 96.00,54.00 L96.00,92.00 Q96,96 92.00,96.00 L16.00,96.00 Q12,96 12.00,92.00 L12.00,54.00 Q12,50 14.97,47.32 Z" android:fillColor="@color/brand_house"/>
-        <path android:pathData="M24,64 H84" android:strokeColor="@color/brand_set_point" android:strokeWidth="5" android:strokeLineCap="round"/>
+        <path android:pathData="M20,64 H84" android:strokeColor="@color/brand_set_point" android:strokeWidth="5" android:strokeLineCap="round"/>
         <path android:pathData="M24,84 C36,84 36,44 47,44 C58,44 58,66 66,68 C72,69.5 76,64 84,64" android:strokeColor="@color/brand_trace" android:strokeWidth="7" android:strokeLineCap="round" android:strokeLineJoin="round"/>
     </group>
 </vector>
