@@ -59,10 +59,10 @@ class MqttSession(
         transport.disconnect()
     }
 
-    /** Publish `{base}/{phone}/{leaf}` at QoS 1, now or on the next connect. Never retained. */
+    /** Publish `{base}/{phone}/{leaf}` at QoS 1, now or on the next connect; retained only if presence. */
     @Synchronized
     fun publish(leaf: String, payload: String) {
-        if (connected) transport.publish(config.topic(leaf), payload, retained = false) else outbox.add(leaf, payload)
+        if (connected) transport.publish(config.topic(leaf), payload, retained = leaf in RETAINED) else outbox.add(leaf, payload)
     }
 
     private fun connect() {
@@ -80,7 +80,7 @@ class MqttSession(
         transport.subscribe(downward)
         transport.publish(config.topic("available"), "true", retained = true)
         for ((leaf, payload) in outbox.drain()) {
-            transport.publish(config.topic(leaf), payload, retained = false)
+            transport.publish(config.topic(leaf), payload, retained = leaf in RETAINED)
         }
         listener.onStateChanged(State.Connected)
     }
@@ -120,6 +120,10 @@ class MqttSession(
         const val INITIAL_BACKOFF_MS = 2_000L
         const val MAX_BACKOFF_MS = 5 * 60_000L
         private const val RECENT_MAX = 64
+
+        // Presence is state, not an event: retained, so an adapter that was
+        // restarting reads the current side of the fence when it is back.
+        private val RETAINED = setOf("person/presence")
 
         /** Doubling from 2 s, capped at 5 min. */
         fun backoffMs(attempt: Int): Long =

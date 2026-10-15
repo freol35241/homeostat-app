@@ -87,11 +87,13 @@ class MqttSessionTest {
     }
 
     @Test
-    fun `publish goes straight out while connected, never retained`() {
+    fun `publish goes straight out while connected, retained only for presence`() {
         session.start()
         transport.callbacks.onConnected()
-        session.publish("notifier/ack", "1752600000")
-        assertEquals("publish companion/alice/notifier/ack 1752600000", transport.calls.last())
+        session.publish("notifier/ack", "1752600000.12")
+        assertEquals("publish companion/alice/notifier/ack 1752600000.12", transport.calls.last())
+        session.publish("person/presence", "true")
+        assertEquals("publish companion/alice/person/presence true retained", transport.calls.last())
     }
 
     @Test
@@ -106,7 +108,7 @@ class MqttSessionTest {
             listOf(
                 "publish companion/alice/available true retained",
                 "publish companion/alice/notifier/ack 1",
-                "publish companion/alice/person/presence false",
+                "publish companion/alice/person/presence false retained",
             ),
             transport.calls.filter { it.startsWith("publish") },
         )
@@ -126,7 +128,7 @@ class MqttSessionTest {
         assertEquals(
             listOf(
                 "publish companion/alice/available true retained",
-                "publish companion/alice/person/presence false",
+                "publish companion/alice/person/presence false retained",
             ),
             transport.calls.filter { it.startsWith("publish") },
         )
