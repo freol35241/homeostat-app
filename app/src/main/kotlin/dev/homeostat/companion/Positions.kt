@@ -29,6 +29,7 @@ object Positions {
         val store = ConfigStore(context)
         val client = LocationServices.getFusedLocationProviderClient(context)
         val wanted = store.sharePosition && store.lastPresence == false && Geofences.permitted(context)
+        Log.i(TAG, "updates ${if (wanted) "on" else "off"}")
         if (wanted) {
             val request = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, INTERVAL_MS)
                 .setMinUpdateDistanceMeters(MIN_DISTANCE_M)
@@ -48,6 +49,7 @@ object Positions {
 class PositionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val fix = LocationResult.extractResult(intent)?.lastLocation ?: return
+        Log.i("Positions", "fix, accuracy ${fix.accuracy} m")
         val battery = context.getSystemService(BatteryManager::class.java)
             .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
             .takeIf { it in 0..100 }

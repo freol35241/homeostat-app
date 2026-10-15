@@ -29,6 +29,7 @@ class CompanionService : Service(), MqttSession.Listener {
 
     override fun onCreate() {
         super.onCreate()
+        Log.i(TAG, "created")
         Channels.ensure(this)
         val notification = statusNotification(getString(R.string.status_starting))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -42,6 +43,7 @@ class CompanionService : Service(), MqttSession.Listener {
         if (session == null) {
             val config = ConfigStore(this).load()
             if (config == null) {
+                Log.i(TAG, "not provisioned, stopping")
                 stopSelf()
                 return START_NOT_STICKY
             }
@@ -56,6 +58,7 @@ class CompanionService : Service(), MqttSession.Listener {
     }
 
     override fun onDestroy() {
+        Log.i(TAG, "destroyed")
         session?.stop()
         session = null
         Status.update(getString(R.string.status_stopped))
@@ -65,6 +68,7 @@ class CompanionService : Service(), MqttSession.Listener {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStateChanged(state: MqttSession.State) {
+        Log.i(TAG, "session: $state")
         val text = when (state) {
             MqttSession.State.Connecting -> getString(R.string.status_connecting)
             MqttSession.State.Connected -> getString(R.string.status_connected)
@@ -88,6 +92,7 @@ class CompanionService : Service(), MqttSession.Listener {
             return
         }
         val id = nextId.getAndIncrement()
+        Log.i(TAG, "notifying $leaf as #$id")
         // Open and dismiss both acknowledge: the tap reaches DashboardActivity
         // with the flag, the swipe reaches AckReceiver.
         val open = PendingIntent.getActivity(

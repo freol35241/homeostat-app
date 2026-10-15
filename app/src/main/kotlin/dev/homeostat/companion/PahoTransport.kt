@@ -1,5 +1,6 @@
 package dev.homeostat.companion
 
+import android.util.Log
 import java.nio.charset.StandardCharsets.UTF_8
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
@@ -22,10 +23,18 @@ class PahoTransport : Transport {
     override fun connect(config: CompanionConfig, callbacks: Transport.Callbacks) {
         val client = client ?: MqttAsyncClient(config.serverUri, config.clientId, MemoryPersistence()).also {
             it.setCallback(object : MqttCallback {
-                override fun connectionLost(cause: Throwable) = callbacks.onConnectionLost(cause)
-                override fun messageArrived(topic: String, message: MqttMessage) =
-                    callbacks.onMessage(topic, String(message.payload, UTF_8))
-                override fun deliveryComplete(token: IMqttDeliveryToken) {}
+                override fun connectionLost(cause: Throwable) {
+                    Log.i(TAG, "connection lost", cause)
+                    callbacks.onConnectionLost(cause)
+                }
+                override fun messageArrived(topic: String, message: MqttMessage) {
+                    val payload = String(message.payload, UTF_8)
+                    Log.i(TAG, "received $topic, ${message.payload.size} bytes")
+                    callbacks.onMessage(topic, payload)
+                }
+                override fun deliveryComplete(token: IMqttDeliveryToken) {
+                    Log.i(TAG, "delivered ${token.topics?.joinToString()}")
+                }
             })
             this.client = it
         }
@@ -38,22 +47,32 @@ class PahoTransport : Transport {
             password = config.password.toCharArray()
             setWill(config.topic("available"), "false".toByteArray(UTF_8), 1, true)
         }
+        Log.i(TAG, "connecting to ${config.serverUri} as ${config.clientId}")
         client.connect(options, null, object : IMqttActionListener {
-            override fun onSuccess(token: IMqttToken) = callbacks.onConnected()
-            override fun onFailure(token: IMqttToken, cause: Throwable) = callbacks.onConnectFailed(cause)
+            override fun onSuccess(token: IMqttToken) {
+                Log.i(TAG, "connected, session present: ${token.sessionPresent}")
+                callbacks.onConnected()
+            }
+            override fun onFailure(token: IMqttToken, cause: Throwable) {
+                Log.i(TAG, "connect failed", cause)
+                callbacks.onConnectFailed(cause)
+            }
         })
     }
 
     override fun subscribe(topics: List<String>) {
+        Log.i(TAG, "subscribing to ${topics.joinToString()}")
         client?.subscribe(topics.toTypedArray(), IntArray(topics.size) { 1 })
     }
 
     override fun publish(topic: String, payload: String, retained: Boolean) {
+        Log.i(TAG, "publishing $topic${if (retained) " (retained)" else ""}, ${payload.length} chars")
         client?.publish(topic, payload.toByteArray(UTF_8), 1, retained)
     }
 
     override fun disconnect() {
         client?.let {
+            Log.i(TAG, "disconnecting")
             runCatching { it.disconnectForcibly(DISCONNECT_TIMEOUT_MS) }
             runCatching { it.close() }
         }
@@ -61,6 +80,7 @@ class PahoTransport : Transport {
     }
 
     private companion object {
+        const val TAG = "PahoTransport"
         // Minutes, not seconds: the tunnel keeps itself alive.
         const val KEEPALIVE_S = 5 * 60
         const val CONNECT_TIMEOUT_S = 30

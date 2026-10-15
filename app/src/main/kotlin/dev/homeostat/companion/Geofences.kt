@@ -32,8 +32,15 @@ object Geofences {
     /** Registers when there is a home and the permissions to watch it; a no-op otherwise. */
     @SuppressLint("MissingPermission") // permitted() is the check; lint cannot follow it.
     fun register(context: Context) {
-        val home = ConfigStore(context).load()?.home ?: return
-        if (!permitted(context)) return
+        val home = ConfigStore(context).load()?.home
+        if (home == null) {
+            Log.i(TAG, "no home in the config, no geofence")
+            return
+        }
+        if (!permitted(context)) {
+            Log.i(TAG, "location not permitted, no geofence")
+            return
+        }
         val fence = Geofence.Builder()
             .setRequestId(ID)
             .setCircularRegion(home.lat, home.lon, home.radiusM)
@@ -51,6 +58,7 @@ object Geofences {
             context, 0, Intent(context, GeofenceReceiver::class.java), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         LocationServices.getGeofencingClient(context).addGeofences(request, pending)
+            .addOnSuccessListener { Log.i(TAG, "registered home, ${home.radiusM} m") }
             .addOnFailureListener { Log.w(TAG, "registering home failed", it) }
     }
 }
@@ -67,6 +75,7 @@ class GeofenceReceiver : BroadcastReceiver() {
             Geofence.GEOFENCE_TRANSITION_EXIT -> false
             else -> return
         }
+        Log.i("Geofences", "transition: ${if (presence) "enter" else "exit"}")
         ConfigStore(context).lastPresence = presence
         CompanionService.publish(context, "person/presence", presence.toString())
         // Away starts the opt-in position updates; home stops them.
