@@ -47,6 +47,9 @@ class MqttSession(
 
     @Synchronized
     fun stop() {
+        // A clean disconnect suppresses the last will, so the phone says
+        // `false` itself; otherwise the retained `true` outlives it.
+        if (connected) transport.publish(config.topic("available"), "false", retained = true)
         running = false
         connected = false
         pendingRetry?.cancel()

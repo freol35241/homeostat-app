@@ -173,7 +173,7 @@ class CompanionService : Service(), MqttSession.Listener {
             )
         }
 
-        /** A re-provision: the old session goes down with its own last will, the new one comes up. */
+        /** A re-provision: the old session goes down saying `false`, the new one comes up. */
         fun restart(context: Context) {
             context.stopService(Intent(context, CompanionService::class.java))
             start(context)

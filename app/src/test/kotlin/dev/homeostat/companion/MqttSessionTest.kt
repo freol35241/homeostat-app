@@ -77,6 +77,15 @@ class MqttSessionTest {
     }
 
     @Test
+    fun `stop while connected says false itself, since a clean disconnect fires no will`() {
+        session.start()
+        transport.callbacks.onConnected()
+        transport.calls.clear()
+        session.stop()
+        assertEquals(listOf("publish companion/alice/available false retained", "disconnect"), transport.calls)
+    }
+
+    @Test
     fun `publish goes straight out while connected, never retained`() {
         session.start()
         transport.callbacks.onConnected()

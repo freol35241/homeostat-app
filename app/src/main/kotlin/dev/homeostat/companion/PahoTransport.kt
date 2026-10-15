@@ -73,7 +73,10 @@ class PahoTransport : Transport {
     override fun disconnect() {
         client?.let {
             Log.i(TAG, "disconnecting")
-            runCatching { it.disconnectForcibly(DISCONNECT_TIMEOUT_MS) }
+            // The quiesce lets the session's own `false` reach the broker
+            // first, and bounds how long onDestroy blocks the main thread
+            // (the one-argument overload waits up to 30 s).
+            runCatching { it.disconnectForcibly(QUIESCE_TIMEOUT_MS, DISCONNECT_TIMEOUT_MS) }
             runCatching { it.close() }
         }
         client = null
@@ -84,6 +87,7 @@ class PahoTransport : Transport {
         // Minutes, not seconds: the tunnel keeps itself alive.
         const val KEEPALIVE_S = 5 * 60
         const val CONNECT_TIMEOUT_S = 30
+        const val QUIESCE_TIMEOUT_MS = 2_000L
         const val DISCONNECT_TIMEOUT_MS = 2_000L
     }
 }
