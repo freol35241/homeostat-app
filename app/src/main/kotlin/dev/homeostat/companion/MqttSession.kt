@@ -37,6 +37,8 @@ class MqttSession(
     // What the phone said while it had no broker: acks and presence
     // transitions wait here for the next connect, in order.
     private val outbox = ArrayDeque<Pair<String, String>>()
+    // The last notifications shown, oldest first, to drop redeliveries.
+    private val recent = LinkedHashSet<String>()
 
     @Synchronized
     fun start() {
@@ -93,6 +95,12 @@ class MqttSession(
     @Synchronized
     override fun onMessage(topic: String, payload: String) {
         if (!running || topic !in downward) return
+        // QoS 1 is at least once: a redelivery is byte-identical, `sent_at`
+        // included, and two real notifications never share a `sent_at`.
+        val key = "$topic $payload"
+        if (key in recent) return
+        recent += key
+        if (recent.size > RECENT_MAX) recent.remove(recent.first())
         listener.onNotification(topic.substringAfterLast('/'), payload)
     }
 
@@ -112,6 +120,7 @@ class MqttSession(
     companion object {
         const val INITIAL_BACKOFF_MS = 2_000L
         const val MAX_BACKOFF_MS = 5 * 60_000L
+        private const val RECENT_MAX = 64
 
         /** Doubling from 2 s, capped at 5 min. */
         fun backoffMs(attempt: Int): Long =

@@ -126,6 +126,25 @@ class MqttSessionTest {
         assertEquals(listOf("alert" to "{}"), listener.notifications)
     }
 
+    @Test
+    fun `a QoS 1 redelivery is dropped, a new notification is not`() {
+        session.start()
+        transport.callbacks.onConnected()
+        val first = """{"text":"hi","sent_at":1752600000.12}"""
+        val second = """{"text":"hi","sent_at":1752600001.5}"""
+        transport.callbacks.onMessage("companion/alice/notifier/alert", first)
+        transport.callbacks.onConnectionLost(RuntimeException())
+        scheduler.runNext()
+        transport.callbacks.onConnected()
+        transport.callbacks.onMessage("companion/alice/notifier/alert", first)
+        transport.callbacks.onMessage("companion/alice/notifier/alert", second)
+        transport.callbacks.onMessage("companion/alice/notifier/message", first)
+        assertEquals(
+            listOf("alert" to first, "alert" to second, "message" to first),
+            listener.notifications,
+        )
+    }
+
     private class FakeTransport : Transport {
         val calls = mutableListOf<String>()
         lateinit var callbacks: Transport.Callbacks
