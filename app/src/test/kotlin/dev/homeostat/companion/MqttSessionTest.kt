@@ -9,7 +9,8 @@ class MqttSessionTest {
     private val transport = FakeTransport()
     private val scheduler = FakeScheduler()
     private val listener = RecordingListener()
-    private val session = MqttSession(config, transport, scheduler, listener)
+    private val outbox = FakeOutbox()
+    private val session = MqttSession(config, transport, scheduler, listener, outbox)
 
     @Test
     fun `start connects, then subscribes both channels before the birth message`() {
@@ -117,6 +118,21 @@ class MqttSessionTest {
     }
 
     @Test
+    fun `what an earlier process queued goes out on the first connect`() {
+        session.publish("person/presence", "false")
+        val next = MqttSession(config, transport, scheduler, listener, outbox)
+        next.start()
+        transport.callbacks.onConnected()
+        assertEquals(
+            listOf(
+                "publish companion/alice/available true retained",
+                "publish companion/alice/person/presence false",
+            ),
+            transport.calls.filter { it.startsWith("publish") },
+        )
+    }
+
+    @Test
     fun `only the two downward topics reach the listener, by leaf`() {
         session.start()
         transport.callbacks.onConnected()
@@ -165,6 +181,12 @@ class MqttSessionTest {
         override fun disconnect() {
             calls += "disconnect"
         }
+    }
+
+    private class FakeOutbox : Outbox {
+        private val items = mutableListOf<Pair<String, String>>()
+        override fun add(leaf: String, payload: String) { items += leaf to payload }
+        override fun drain(): List<Pair<String, String>> = items.toList().also { items.clear() }
     }
 
     private class FakeScheduler : Scheduler {

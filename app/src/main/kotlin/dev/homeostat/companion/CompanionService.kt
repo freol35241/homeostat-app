@@ -47,7 +47,7 @@ class CompanionService : Service(), MqttSession.Listener {
                 stopSelf()
                 return START_NOT_STICKY
             }
-            session = MqttSession(config, PahoTransport(), HandlerScheduler(), this).also { it.start() }
+            session = MqttSession(config, PahoTransport(), HandlerScheduler(), this, ConfigStore(this).outbox).also { it.start() }
         }
         when (intent?.action) {
             // Epoch seconds, a bare number: the person saw it, now.

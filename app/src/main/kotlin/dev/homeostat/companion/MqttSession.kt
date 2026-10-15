@@ -14,6 +14,9 @@ class MqttSession(
     private val transport: Transport,
     private val scheduler: Scheduler,
     private val listener: Listener,
+    // What the phone said while it had no broker: acks and presence
+    // transitions wait here for the next connect, in order.
+    private val outbox: Outbox,
 ) : Transport.Callbacks {
 
     sealed interface State {
@@ -34,9 +37,6 @@ class MqttSession(
     private var connected = false
     private var attempt = 0
     private var pendingRetry: Cancellable? = null
-    // What the phone said while it had no broker: acks and presence
-    // transitions wait here for the next connect, in order.
-    private val outbox = ArrayDeque<Pair<String, String>>()
     // The last notifications shown, oldest first, to drop redeliveries.
     private val recent = LinkedHashSet<String>()
 
@@ -62,7 +62,7 @@ class MqttSession(
     /** Publish `{base}/{phone}/{leaf}` at QoS 1, now or on the next connect. Never retained. */
     @Synchronized
     fun publish(leaf: String, payload: String) {
-        if (connected) transport.publish(config.topic(leaf), payload, retained = false) else outbox += leaf to payload
+        if (connected) transport.publish(config.topic(leaf), payload, retained = false) else outbox.add(leaf, payload)
     }
 
     private fun connect() {
@@ -79,8 +79,7 @@ class MqttSession(
         // persistent session the broker already remembers, and it is cheap.
         transport.subscribe(downward)
         transport.publish(config.topic("available"), "true", retained = true)
-        while (outbox.isNotEmpty()) {
-            val (leaf, payload) = outbox.removeFirst()
+        for ((leaf, payload) in outbox.drain()) {
             transport.publish(config.topic(leaf), payload, retained = false)
         }
         listener.onStateChanged(State.Connected)
@@ -141,6 +140,14 @@ interface Transport {
     fun subscribe(topics: List<String>)
     fun publish(topic: String, payload: String, retained: Boolean)
     fun disconnect()
+}
+
+/** Leaf and payload pairs, in order, kept somewhere a process death does not reach. */
+interface Outbox {
+    fun add(leaf: String, payload: String)
+
+    /** Everything queued, oldest first, and empty afterwards. */
+    fun drain(): List<Pair<String, String>>
 }
 
 fun interface Scheduler {
