@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
+import java.math.BigDecimal
 import java.util.concurrent.atomic.AtomicInteger
 import org.json.JSONException
 import org.json.JSONObject
@@ -50,8 +51,8 @@ class CompanionService : Service(), MqttSession.Listener {
             session = MqttSession(config, PahoTransport(), HandlerScheduler(), this, ConfigStore(this).outbox).also { it.start() }
         }
         when (intent?.action) {
-            // Epoch seconds, a bare number: the person saw it, now.
-            ACTION_ACK -> session?.publish("notifier/ack", (System.currentTimeMillis() / 1000).toString())
+            // The alert's own `sent_at`, echoed: which alert, on the adapter's clock.
+            ACTION_ACK -> session?.publish("notifier/ack", intent.getStringExtra(EXTRA_ACK)!!)
             ACTION_PUBLISH -> session?.publish(intent.getStringExtra(EXTRA_LEAF)!!, intent.getStringExtra(EXTRA_PAYLOAD)!!)
         }
         return START_STICKY
@@ -93,14 +94,22 @@ class CompanionService : Service(), MqttSession.Listener {
         }
         val id = nextId.getAndIncrement()
         Log.i(TAG, "notifying $leaf as #$id")
+        val sentAt = json.optDouble("sent_at")
+        // Only an alert is acknowledged, by echoing its `sent_at`: nothing
+        // escalates a message, and an ack for one would make an earlier
+        // alert look seen. Plain notation, the same number as received.
+        val ack = if (leaf == Channels.ALERT && !sentAt.isNaN()) BigDecimal.valueOf(sentAt).toPlainString() else null
+        if (leaf == Channels.ALERT && ack == null) Log.w(TAG, "alert without sent_at, cannot be acknowledged")
         // Open and dismiss both acknowledge: the tap reaches DashboardActivity
-        // with the flag, the swipe reaches AckReceiver.
+        // with the extra, the swipe reaches AckReceiver.
         val open = PendingIntent.getActivity(
             this, id,
-            Intent(this, DashboardActivity::class.java).putExtra(EXTRA_ACK, true),
+            Intent(this, DashboardActivity::class.java).apply { if (ack != null) putExtra(EXTRA_ACK, ack) },
             PendingIntent.FLAG_IMMUTABLE,
         )
-        val dismissed = PendingIntent.getBroadcast(this, id, Intent(this, AckReceiver::class.java), PendingIntent.FLAG_IMMUTABLE)
+        val dismissed = ack?.let {
+            PendingIntent.getBroadcast(this, id, Intent(this, AckReceiver::class.java).putExtra(EXTRA_ACK, it), PendingIntent.FLAG_IMMUTABLE)
+        }
         val notification = Notification.Builder(this, leaf)
             .setSmallIcon(R.drawable.ic_stat_homeostat)
             .setColor(getColor(if (leaf == Channels.ALERT) R.color.brand_set_point else R.color.brand_house))
@@ -111,7 +120,6 @@ class CompanionService : Service(), MqttSession.Listener {
             .setDeleteIntent(dismissed)
             .setAutoCancel(true)
             .apply {
-                val sentAt = json.optDouble("sent_at")
                 if (!sentAt.isNaN()) setWhen((sentAt * 1000).toLong()).setShowWhen(true)
                 if (leaf == Channels.ALERT) setCategory(Notification.CATEGORY_ALARM)
             }
@@ -159,8 +167,11 @@ class CompanionService : Service(), MqttSession.Listener {
             context.startForegroundService(Intent(context, CompanionService::class.java))
         }
 
-        fun ack(context: Context) {
-            context.startForegroundService(Intent(context, CompanionService::class.java).setAction(ACTION_ACK))
+        /** [sentAt] is the alert's own, as the ack's payload. */
+        fun ack(context: Context, sentAt: String) {
+            context.startForegroundService(
+                Intent(context, CompanionService::class.java).setAction(ACTION_ACK).putExtra(EXTRA_ACK, sentAt),
+            )
         }
 
         /** Publish in this phone's subtree, from wherever the OS woke us; queued if offline. */

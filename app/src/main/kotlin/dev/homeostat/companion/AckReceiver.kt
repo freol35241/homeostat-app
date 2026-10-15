@@ -5,10 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 
-/** A notification was dismissed: that is the far-end receipt. */
+/** An alert was dismissed: that is the far-end receipt. */
 class AckReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.i("AckReceiver", "dismissed")
-        CompanionService.ack(context)
+        CompanionService.ack(context, intent.getStringExtra(CompanionService.EXTRA_ACK)!!)
     }
 }

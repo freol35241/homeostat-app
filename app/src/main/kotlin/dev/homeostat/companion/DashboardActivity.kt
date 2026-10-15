@@ -22,7 +22,7 @@ class DashboardActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled") // The page is the house's own dashboard unit.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (intent.getBooleanExtra(CompanionService.EXTRA_ACK, false)) CompanionService.ack(this)
+        intent.getStringExtra(CompanionService.EXTRA_ACK)?.let { CompanionService.ack(this, it) }
         val url = ConfigStore(this).load()?.dashboard
         if (url == null) {
             startActivity(Intent(this, MainActivity::class.java))
