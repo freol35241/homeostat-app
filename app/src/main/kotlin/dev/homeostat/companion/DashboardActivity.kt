@@ -3,8 +3,8 @@ package dev.homeostat.companion
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.view.KeyEvent
 import android.webkit.WebView
+import androidx.activity.OnBackPressedCallback
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 
@@ -29,10 +29,21 @@ class DashboardActivity : AppCompatActivity() {
             finish()
             return
         }
+        // Back walks the page's own history first. From target 36 the system
+        // no longer delivers KEYCODE_BACK; the dispatcher is the only hook,
+        // and the callback is enabled only while there is somewhere to go.
+        val back = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() = web.goBack()
+        }
+        onBackPressedDispatcher.addCallback(this, back)
         web = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+                override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
+                    back.isEnabled = view.canGoBack()
+                }
+            }
         }
         setContentView(web)
         if (savedInstanceState == null) web.loadUrl(url) else web.restoreState(savedInstanceState)
@@ -41,13 +52,5 @@ class DashboardActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         if (::web.isInitialized) web.saveState(outState)
-    }
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK && ::web.isInitialized && web.canGoBack()) {
-            web.goBack()
-            return true
-        }
-        return super.onKeyDown(keyCode, event)
     }
 }

@@ -7,7 +7,7 @@ SDK_ROOT="${ANDROID_HOME:-/usr/local/android-sdk}"
 # Pinned rather than "latest": an SDK that changes under a container
 # rebuild is a build that breaks for reasons no commit explains.
 CMDLINE_TOOLS_BUILD=13114758
-PLATFORM="platforms;android-35"
+PLATFORM="platforms;android-36"
 BUILD_TOOLS="build-tools;35.0.0"
 
 if [ -x "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then

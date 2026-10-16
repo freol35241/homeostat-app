@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "dev.homeostat.companion"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "dev.homeostat.companion"
@@ -15,7 +15,7 @@ android {
         // older device to support, so there is no reason to carry the
         // compatibility code for one.
         minSdk = 31
-        targetSdk = 35
+        targetSdk = 36
         // Set by the release workflow from the tag and the run number, so a
         // release is a tag and not a bump commit. Locally: 0.0.0 (1).
         versionCode = System.getenv("HOMEOSTAT_VERSION_CODE")?.toInt() ?: 1
