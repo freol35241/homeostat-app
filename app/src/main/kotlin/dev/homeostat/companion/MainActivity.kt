@@ -17,6 +17,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
 import androidx.appcompat.app.AppCompatActivity
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -61,7 +62,7 @@ class MainActivity : AppCompatActivity() {
         }
         location = Button(this).apply {
             text = getString(R.string.allow_location)
-            setOnClickListener { requestLocation() }
+            setOnClickListener { discloseLocation() }
         }
         sharePosition = MaterialSwitch(this).apply {
             text = getString(R.string.share_position)
@@ -115,6 +116,17 @@ class MainActivity : AppCompatActivity() {
         // Position needs the fence: it only runs while away.
         sharePosition.visibility = if (hasHome && Geofences.permitted(this)) View.VISIBLE else View.GONE
         sharePosition.isChecked = store.sharePosition
+    }
+
+    // Play's prominent disclosure: what is collected, why, and that it runs
+    // in the background, said in the app before the system prompt.
+    private fun discloseLocation() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.location_disclosure_title)
+            .setMessage(R.string.location_disclosure)
+            .setPositiveButton(R.string.location_disclosure_continue) { _, _ -> requestLocation() }
+            .setNegativeButton(R.string.location_disclosure_not_now, null)
+            .show()
     }
 
     // Android grants background location only as a second step after

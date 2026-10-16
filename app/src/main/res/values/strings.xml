@@ -8,6 +8,10 @@
     <string name="allow_battery_exemption">Keep connected in the background</string>
     <string name="allow_location">Allow location, for home presence</string>
     <string name="share_position">Share position while away</string>
+    <string name="location_disclosure_title">Location, for home presence</string>
+    <string name="location_disclosure">Homeostat uses your location to tell your house when you arrive home and when you leave, even when the app is closed or not in use.\n\nIf you turn on “Share position while away”, it also sends your position to your house while you are away from home.\n\nYour location goes only to your own house’s server, over your own network, and to no one else.</string>
+    <string name="location_disclosure_continue">Continue</string>
+    <string name="location_disclosure_not_now">Not now</string>
     <string name="scan">Scan config QR code</string>
     <string name="paste_hint">…or paste the config here</string>
     <string name="use_pasted">Use pasted config</string>
