@@ -1,8 +1,9 @@
 name: Release
 
 # A release is a tag: `git tag v0.1.0 && git push origin v0.1.0` builds a
-# signed APK and attaches it to a GitHub pre-release. The version name is
-# the tag, the version code the run number, so nothing in the tree bumps.
+# signed APK, for sideloading, and a signed AAB, for uploading to Play by
+# hand, and attaches both to a GitHub pre-release. The version name is the
+# tag, the version code the run number, so nothing in the tree bumps.
 on:
   push:
     tags: ["v*"]
@@ -29,7 +30,7 @@ jobs:
         env:
           HOMEOSTAT_KEYSTORE_BASE64: ${{ secrets.HOMEOSTAT_KEYSTORE_BASE64 }}
       - name: Build
-        run: ./gradlew test lint assembleRelease
+        run: ./gradlew test lint assembleRelease bundleRelease
         env:
           HOMEOSTAT_VERSION_NAME: ${{ github.ref_name }}
           HOMEOSTAT_VERSION_CODE: ${{ github.run_number }}
@@ -39,7 +40,9 @@ jobs:
       - name: Publish the pre-release
         run: |
           cp app/build/outputs/apk/release/app-release.apk "homeostat-${{ github.ref_name }}.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "homeostat-${{ github.ref_name }}.aab"
           gh release create "${{ github.ref_name }}" --prerelease --generate-notes \
-            --title "homeostat-app ${{ github.ref_name }}" "homeostat-${{ github.ref_name }}.apk"
+            --title "homeostat-app ${{ github.ref_name }}" \
+            "homeostat-${{ github.ref_name }}.apk" "homeostat-${{ github.ref_name }}.aab"
         env:
           GH_TOKEN: ${{ github.token }}
