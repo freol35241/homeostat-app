@@ -62,7 +62,7 @@ class CompanionService : Service(), MqttSession.Listener {
         Log.i(TAG, "destroyed")
         session?.stop()
         session = null
-        Status.update(getString(R.string.status_stopped))
+        Status.update(getString(R.string.status_stopped), Status.Tone.Off)
         super.onDestroy()
     }
 
@@ -76,7 +76,7 @@ class CompanionService : Service(), MqttSession.Listener {
             is MqttSession.State.Waiting ->
                 getString(R.string.status_waiting, state.retryInMs / 1000, state.cause ?: "")
         }
-        Status.update(text)
+        Status.update(text, if (state == MqttSession.State.Connected) Status.Tone.Ok else Status.Tone.Trying)
         notifications.notify(NOTIFICATION_ID, statusNotification(text))
     }
 
@@ -194,12 +194,18 @@ class CompanionService : Service(), MqttSession.Listener {
 
 /** The session's state, for the screen; observed on the main thread. */
 object Status {
+    /** The status dot: up, on its way, or not running. */
+    enum class Tone { Ok, Trying, Off }
+
     @Volatile var text: String = ""
         private set
-    @Volatile var observer: ((String) -> Unit)? = null
+    @Volatile var tone: Tone = Tone.Off
+        private set
+    @Volatile var observer: (() -> Unit)? = null
 
-    fun update(text: String) {
+    fun update(text: String, tone: Tone) {
         this.text = text
-        Handler(Looper.getMainLooper()).post { observer?.invoke(text) }
+        this.tone = tone
+        Handler(Looper.getMainLooper()).post { observer?.invoke() }
     }
 }

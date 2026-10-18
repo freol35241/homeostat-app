@@ -5,4 +5,16 @@
     <color name="brand_house_dark">#2A7A61</color>
     <color name="brand_trace">#F2EFE6</color>
     <color name="brand_set_point">#E8A33D</color>
+
+    <!-- Warm neutrals around the trace, in place of Material's own, which
+         lean purple against the pine. -->
+    <color name="surface">#F2EFE6</color>
+    <color name="surface_card">#FBFAF6</color>
+    <color name="surface_raised">#E9E5DA</color>
+    <color name="on_surface">#1B1D1A</color>
+    <color name="on_surface_variant">#4B514C</color>
+    <color name="outline">#7B807B</color>
+    <color name="outline_variant">#D6D1C4</color>
+    <color name="primary_container">#C8E6D9</color>
+    <color name="on_primary_container">#0A2A1F</color>
 </resources>

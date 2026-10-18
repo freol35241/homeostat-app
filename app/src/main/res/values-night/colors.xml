@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="surface">#131614</color>
+    <color name="surface_card">#1C201D</color>
+    <color name="surface_raised">#262B27</color>
+    <color name="on_surface">#E4E3DD</color>
+    <color name="on_surface_variant">#BFC7C1</color>
+    <color name="outline">#89918B</color>
+    <color name="outline_variant">#3A403C</color>
+    <color name="primary_container">#164536</color>
+    <color name="on_primary_container">#C8E6D9</color>
+</resources>

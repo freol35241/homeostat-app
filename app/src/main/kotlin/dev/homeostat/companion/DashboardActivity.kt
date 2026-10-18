@@ -4,9 +4,12 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.webkit.WebView
+import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 /**
  * The launcher: the dashboard unit's page in a standalone window, which is
@@ -45,7 +48,15 @@ class DashboardActivity : AppCompatActivity() {
                 }
             }
         }
-        setContentView(web)
+        // Edge to edge from target 35: the page sits between the bars, on the
+        // theme's background, rather than under the clock.
+        val frame = FrameLayout(this).apply { addView(web) }
+        ViewCompat.setOnApplyWindowInsetsListener(frame) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
+        setContentView(frame)
         if (savedInstanceState == null) web.loadUrl(url) else web.restoreState(savedInstanceState)
     }
 
