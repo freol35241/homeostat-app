@@ -76,8 +76,13 @@ class GeofenceReceiver : BroadcastReceiver() {
             else -> return
         }
         Log.i("Geofences", "transition: ${if (presence) "enter" else "exit"}")
-        ConfigStore(context).lastPresence = presence
+        val store = ConfigStore(context)
+        store.lastPresence = presence
         CompanionService.publish(context, "person/presence", presence.toString())
+        // Every transition is also a fix, so the newest one the house holds
+        // is not the last taken on the way in (companion-protocol.md, "position").
+        val fix = event.triggeringLocation
+        if (store.sharePosition && fix != null) Positions.publish(context, fix)
         // Away starts the opt-in position updates; home stops them.
         Positions.reconcile(context)
     }

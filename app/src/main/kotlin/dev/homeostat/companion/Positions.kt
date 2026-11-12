@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.location.Location
 import android.os.BatteryManager
 import android.util.Log
 import com.google.android.gms.location.LocationRequest
@@ -41,15 +42,8 @@ object Positions {
         }
     }
 
-    private fun pending(context: Context): PendingIntent = PendingIntent.getBroadcast(
-        context, 0, Intent(context, PositionReceiver::class.java), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-    )
-}
-
-class PositionReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        val fix = LocationResult.extractResult(intent)?.lastLocation ?: return
-        Log.i("Positions", "fix, accuracy ${fix.accuracy} m")
+    /** Publishes [fix] on `person/position`, with the platform's own fix time. */
+    fun publish(context: Context, fix: Location) {
         val battery = context.getSystemService(BatteryManager::class.java)
             .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
             .takeIf { it in 0..100 }
@@ -61,5 +55,17 @@ class PositionReceiver : BroadcastReceiver() {
             fixedAtEpochS = fix.time / 1000,
         )
         CompanionService.publish(context, "person/position", position.toJson())
+    }
+
+    private fun pending(context: Context): PendingIntent = PendingIntent.getBroadcast(
+        context, 0, Intent(context, PositionReceiver::class.java), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+}
+
+class PositionReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val fix = LocationResult.extractResult(intent)?.lastLocation ?: return
+        Log.i("Positions", "fix, accuracy ${fix.accuracy} m")
+        Positions.publish(context, fix)
     }
 }
