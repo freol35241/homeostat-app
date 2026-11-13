@@ -54,7 +54,9 @@ class DashboardActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(frame) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime())
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
-            insets
+            // Consumed, or the WebView hands them on to the page as
+            // env(safe-area-inset-*) and its bottom tabs pad for the bar twice.
+            WindowInsetsCompat.CONSUMED
         }
         setContentView(frame)
         if (savedInstanceState == null) web.loadUrl(url) else web.restoreState(savedInstanceState)
