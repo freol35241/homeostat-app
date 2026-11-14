@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Homeostat</string>
+    <string name="shortcut_settings">Settings</string>
     <string name="channel_service">Connection status</string>
     <string name="channel_message">Messages</string>
     <string name="channel_alert">Alerts</string>

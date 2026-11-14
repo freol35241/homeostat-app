@@ -32,21 +32,26 @@ class DashboardActivity : AppCompatActivity() {
             finish()
             return
         }
-        // Back walks the page's own history first. From target 36 the system
-        // no longer delivers KEYCODE_BACK; the dispatcher is the only hook,
-        // and the callback is enabled only while there is somewhere to go.
-        val back = object : OnBackPressedCallback(false) {
-            override fun handleOnBackPressed() = web.goBack()
-        }
-        onBackPressedDispatcher.addCallback(this, back)
+        // Back walks the page's own history first, and past its start goes
+        // to the status screen, the way there from inside the dashboard.
+        // This window finishes, as the status screen's own way back here
+        // does, so the two never stack and a back from there leaves. From
+        // target 36 the system no longer delivers KEYCODE_BACK; the
+        // dispatcher is the only hook.
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (web.canGoBack()) {
+                    web.goBack()
+                } else {
+                    startActivity(Intent(this@DashboardActivity, MainActivity::class.java))
+                    finish()
+                }
+            }
+        })
         web = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            webViewClient = object : WebViewClient() {
-                override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
-                    back.isEnabled = view.canGoBack()
-                }
-            }
+            webViewClient = WebViewClient()
         }
         // Edge to edge from target 35: the page sits between the bars, on the
         // theme's background, rather than under the clock.

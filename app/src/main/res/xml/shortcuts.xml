@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press on the launcher icon: the status screen, for when the
+     service's notification has been dismissed or hidden. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:icon="@drawable/ic_shortcut_settings"
+        android:shortcutId="settings"
+        android:shortcutShortLabel="@string/shortcut_settings">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="dev.homeostat.companion.MainActivity"
+            android:targetPackage="dev.homeostat.companion" />
+    </shortcut>
+</shortcuts>
