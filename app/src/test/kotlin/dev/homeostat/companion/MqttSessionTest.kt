@@ -63,6 +63,32 @@ class MqttSessionTest {
     }
 
     @Test
+    fun `retryNow cuts a pending backoff short, and resets it`() {
+        session.start()
+        repeat(3) {
+            transport.callbacks.onConnectFailed(RuntimeException())
+            scheduler.runNext()
+        }
+        transport.callbacks.onConnectFailed(RuntimeException())
+        val waiting = scheduler.pending.single()
+        session.retryNow()
+        assertTrue(waiting.cancelled)
+        assertEquals(5, transport.calls.count { it == "connect" })
+        transport.callbacks.onConnectFailed(RuntimeException())
+        assertEquals(MqttSession.INITIAL_BACKOFF_MS, scheduler.pending.last().delayMs)
+    }
+
+    @Test
+    fun `retryNow does nothing while connecting or connected`() {
+        session.start()
+        session.retryNow()
+        transport.callbacks.onConnected()
+        session.retryNow()
+        assertEquals(1, transport.calls.count { it == "connect" })
+        assertEquals(emptyList<Cancellable>(), scheduler.pending)
+    }
+
+    @Test
     fun `stop cancels a pending retry and disconnects, and late callbacks are ignored`() {
         session.start()
         transport.callbacks.onConnectFailed(RuntimeException())

@@ -65,6 +65,16 @@ class MqttSession(
         if (connected) transport.publish(config.topic(leaf), payload, retained = leaf in RETAINED) else outbox.add(leaf, payload)
     }
 
+    /** The network is back: skip the rest of the backoff and try now. */
+    @Synchronized
+    fun retryNow() {
+        if (!running || pendingRetry == null) return
+        pendingRetry?.cancel()
+        pendingRetry = null
+        attempt = 0
+        connect()
+    }
+
     private fun connect() {
         listener.onStateChanged(State.Connecting)
         transport.connect(config, this)
@@ -108,6 +118,7 @@ class MqttSession(
         if (!running) return
         val delay = backoffMs(attempt++)
         listener.onStateChanged(State.Waiting(delay, cause.message))
+        pendingRetry?.cancel()
         pendingRetry = scheduler.schedule(delay) {
             synchronized(this) {
                 pendingRetry = null

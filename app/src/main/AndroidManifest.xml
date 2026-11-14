@@ -15,6 +15,8 @@
          once, from the status screen. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Held from an alarm until the keepalive ping or a reconnect resolves. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- usesCleartextTraffic: the dashboard is plain http over the tunnel
          by design (no TLS, no login; reachability is the credential). -->

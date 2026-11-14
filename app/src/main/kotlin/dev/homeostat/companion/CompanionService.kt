@@ -7,6 +7,8 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -25,6 +27,16 @@ import org.json.JSONObject
  */
 class CompanionService : Service(), MqttSession.Listener {
     private var session: MqttSession? = null
+    private var scheduler: AlarmScheduler? = null
+    private val connectivity by lazy { getSystemService(ConnectivityManager::class.java) }
+    // A network coming up cuts the backoff short, rather than leaving the
+    // session waiting up to five minutes with the tunnel already there.
+    private val network = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            Log.i(TAG, "network available")
+            session?.retryNow()
+        }
+    }
     private val notifications by lazy { getSystemService(NotificationManager::class.java) }
     private val nextId = AtomicInteger(FIRST_MESSAGE_ID)
 
@@ -38,6 +50,7 @@ class CompanionService : Service(), MqttSession.Listener {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
+        connectivity.registerDefaultNetworkCallback(network)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -48,7 +61,8 @@ class CompanionService : Service(), MqttSession.Listener {
                 stopSelf()
                 return START_NOT_STICKY
             }
-            session = MqttSession(config, PahoTransport(), HandlerScheduler(), this, ConfigStore(this).outbox).also { it.start() }
+            val scheduler = AlarmScheduler(this, "retry").also { scheduler = it }
+            session = MqttSession(config, PahoTransport(this), scheduler, this, ConfigStore(this).outbox).also { it.start() }
         }
         when (intent?.action) {
             // The alert's own `sent_at`, echoed: which alert, on the adapter's clock.
@@ -60,8 +74,11 @@ class CompanionService : Service(), MqttSession.Listener {
 
     override fun onDestroy() {
         Log.i(TAG, "destroyed")
+        connectivity.unregisterNetworkCallback(network)
         session?.stop()
         session = null
+        scheduler?.close()
+        scheduler = null
         Status.update(getString(R.string.status_stopped), Status.Tone.Off)
         super.onDestroy()
     }
@@ -142,15 +159,6 @@ class CompanionService : Service(), MqttSession.Listener {
             .setContentIntent(open)
             .setOngoing(true)
             .build()
-    }
-
-    /** Main-looper timers. Under Doze these slip; the battery exemption is what keeps them honest. */
-    private class HandlerScheduler : Scheduler {
-        private val handler = Handler(Looper.getMainLooper())
-        override fun schedule(delayMs: Long, task: Runnable): Cancellable {
-            handler.postDelayed(task, delayMs)
-            return Cancellable { handler.removeCallbacks(task) }
-        }
     }
 
     companion object {
