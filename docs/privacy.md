@@ -21,7 +21,9 @@ The app contains no analytics, no advertising, and no crash reporting.
 - **Your position, only if you turn it on.** With "Share position while
   away" switched on, and only while you are away from home, the app sends
   your location (latitude, longitude and accuracy), your battery level and
-  the time of the fix, at most every few minutes. It is off by default.
+  the time of each fix: every few minutes while you move, and as often as
+  every half minute when another app on the phone is asking for your
+  location anyway. It is off by default.
 - **That you saw an alert.** When you open or dismiss an alert, the app
   sends back that alert's send time, so the house knows it was seen.
 - **Whether the app is connected**, so the house knows whether it can
