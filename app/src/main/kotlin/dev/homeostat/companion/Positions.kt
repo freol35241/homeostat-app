@@ -18,11 +18,17 @@ import com.google.android.gms.location.Priority
  * phone, and only while away — inside the fence the router already knows,
  * and a trail of the sofa is what makes people stop running these things.
  * Balanced power, minutes apart, and only after real movement.
+ *
+ * The phone's own requests are [INTERVAL_MS] apart, but any fix the fused
+ * provider computes for another app is taken too, down to
+ * [MIN_UPDATE_INTERVAL_MS]: it costs this app nothing, and without it the
+ * provider throws those fixes away at the interval.
  */
 object Positions {
     private const val TAG = "Positions"
     private const val INTERVAL_MS = 5 * 60_000L
-    private const val MIN_DISTANCE_M = 200f
+    private const val MIN_UPDATE_INTERVAL_MS = 30_000L
+    private const val MIN_DISTANCE_M = 50f
 
     /** Starts or stops updates from the toggle and the last known side of the fence. */
     @SuppressLint("MissingPermission") // Geofences.permitted() is the check; lint cannot follow it.
@@ -33,6 +39,7 @@ object Positions {
         Log.i(TAG, "updates ${if (wanted) "on" else "off"}")
         if (wanted) {
             val request = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, INTERVAL_MS)
+                .setMinUpdateIntervalMillis(MIN_UPDATE_INTERVAL_MS)
                 .setMinUpdateDistanceMeters(MIN_DISTANCE_M)
                 .build()
             client.requestLocationUpdates(request, pending(context))
@@ -64,8 +71,11 @@ object Positions {
 
 class PositionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val fix = LocationResult.extractResult(intent)?.lastLocation ?: return
-        Log.i("Positions", "fix, accuracy ${fix.accuracy} m")
-        Positions.publish(context, fix)
+        // A result can carry a batch, oldest first; each is a fix of its own.
+        val fixes = LocationResult.extractResult(intent)?.locations ?: return
+        for (fix in fixes) {
+            Log.i("Positions", "fix, accuracy ${fix.accuracy} m")
+            Positions.publish(context, fix)
+        }
     }
 }
