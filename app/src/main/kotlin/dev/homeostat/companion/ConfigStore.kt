@@ -27,17 +27,21 @@ class ConfigStore(context: Context) {
      * Committed rather than applied: the point is surviving a kill that
      * lands right after the write. A re-provision empties it, since a
      * queued leaf would otherwise go out under the new phone's subtree.
+     * Positions are capped, see [withoutOldPositions].
      */
     @SuppressLint("ApplySharedPref")
     val outbox = object : Outbox {
         override fun add(leaf: String, payload: String) {
-            val items = JSONArray(prefs.getString(OUTBOX, "[]")).put(JSONArray().put(leaf).put(payload))
+            val items = JSONArray()
+            for ((l, p) in withoutOldPositions(queued() + (leaf to payload))) items.put(JSONArray().put(l).put(p))
             prefs.edit().putString(OUTBOX, items.toString()).commit()
         }
 
-        override fun drain(): List<Pair<String, String>> {
+        override fun drain(): List<Pair<String, String>> =
+            queued().also { prefs.edit().remove(OUTBOX).commit() }
+
+        private fun queued(): List<Pair<String, String>> {
             val items = JSONArray(prefs.getString(OUTBOX, "[]"))
-            prefs.edit().remove(OUTBOX).commit()
             return List(items.length()) { i -> items.getJSONArray(i).let { it.getString(0) to it.getString(1) } }
         }
     }
@@ -55,4 +59,16 @@ class ConfigStore(context: Context) {
         const val PRESENCE = "presence"
         const val OUTBOX = "outbox"
     }
+}
+
+/**
+ * [items] with all but the newest [max] `person/position` fixes dropped,
+ * everything else kept, in order. A fix can arrive every 30 s, so a long
+ * stretch without the tunnel would otherwise grow the outbox without end,
+ * and a lost fix is corrected by the next one (companion-protocol.md,
+ * "Known limits"). Acks and presence are never dropped.
+ */
+internal fun withoutOldPositions(items: List<Pair<String, String>>, max: Int = 200): List<Pair<String, String>> {
+    var excess = items.count { it.first == "person/position" } - max
+    return items.filter { it.first != "person/position" || excess-- <= 0 }
 }
