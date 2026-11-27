@@ -17,7 +17,7 @@ import com.google.android.gms.location.Priority
  * The opt-in fix (companion-protocol.md, "position"): off by default, per
  * phone, and only while away — inside the fence the router already knows,
  * and a trail of the sofa is what makes people stop running these things.
- * Balanced power, minutes apart, and only after real movement.
+ * Balanced power, and only after [MIN_DISTANCE_M] of movement.
  *
  * The phone's own requests are [INTERVAL_MS] apart, but any fix the fused
  * provider computes for another app is taken too, down to
